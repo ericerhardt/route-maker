@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.production
+.env*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,3 +29,10 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Server build
+server/dist
+
+# OS files
+Thumbs.db
+.DS_Store

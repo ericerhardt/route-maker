@@ -1,0 +1,214 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabaseClient'
+import { useOrganization } from '@/contexts/OrganizationContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import AuthGate from '@/components/AuthGate'
+import { Building2, User } from 'lucide-react'
+
+export default function Onboarding() {
+  const [step, setStep] = useState<'profile' | 'organization'>('profile')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [orgName, setOrgName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { refreshOrganizations } = useOrganization()
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim()
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setStep('organization')
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOrganizationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Create organization slug
+      const slug = orgName
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: orgName.trim(),
+          slug,
+          created_by: user.id
+        })
+        .select()
+        .single()
+
+      if (orgError) throw orgError
+
+      // Add user as owner
+      const { error: memberError } = await supabase
+        .from('organization_members')
+        .insert({
+          organization_id: org.id,
+          user_id: user.id,
+          role: 'owner'
+        })
+
+      if (memberError) throw memberError
+
+      await refreshOrganizations()
+
+      toast({
+        title: 'Welcome!',
+        description: 'Your account is set up and ready to go.'
+      })
+
+      navigate('/dashboard')
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <AuthGate>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-lg"
+        >
+          <Card>
+            <CardHeader className="space-y-4">
+              <div className="flex items-center justify-center">
+                {step === 'profile' ? (
+                  <div className="rounded-full bg-primary/10 p-3">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
+                ) : (
+                  <div className="rounded-full bg-primary/10 p-3">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                )}
+              </div>
+              <div className="text-center">
+                <CardTitle>
+                  {step === 'profile' ? 'Welcome!' : 'Create Organization'}
+                </CardTitle>
+                <CardDescription>
+                  {step === 'profile'
+                    ? "Let's start by setting up your profile"
+                    : 'Set up your organization to collaborate with your team'}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <div className={`h-1 flex-1 rounded ${step === 'profile' ? 'bg-primary' : 'bg-muted'}`} />
+                <div className={`h-1 flex-1 rounded ${step === 'organization' ? 'bg-primary' : 'bg-muted'}`} />
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              {step === 'profile' ? (
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Saving...' : 'Continue'}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleOrganizationSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="orgName">Organization Name</Label>
+                    <Input
+                      id="orgName"
+                      placeholder="Acme Inc."
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can always change this later in settings
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setStep('profile')}
+                      disabled={loading}
+                    >
+                      Back
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={loading}>
+                      {loading ? 'Creating...' : 'Create Organization'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </AuthGate>
+  )
+}

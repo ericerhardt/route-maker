@@ -1,73 +1,117 @@
-# React + TypeScript + Vite
+# RouteMaker - Multi-Tenant SaaS Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A production-ready, multi-tenant SaaS application built with React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Supabase, and Express.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🏢 Multi-Tenancy
+- **Organizations**: Create and manage multiple organizations
+- **Role-Based Access Control**: Owner, Admin, and Member roles
+- **Data Isolation**: Row-Level Security (RLS) ensures complete data separation
+- **Organization Switching**: Seamlessly switch between organizations
 
-## React Compiler
+### 👥 Team Collaboration
+- **Team Invitations**: Invite members via email with token-based invites
+- **Member Management**: Add, remove, and update team member roles
+- **Profile Management**: User profiles with customizable information
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🔐 Authentication & Security
+- **Email/Password Authentication**: Powered by Supabase Auth
+- **Password Reset**: Self-service password recovery
+- **Session Management**: Automatic token refresh and session handling
+- **Row-Level Security**: Database-level security policies
 
-## Expanding the ESLint configuration
+### 🎨 Modern UI/UX
+- **shadcn/ui Components**: Beautiful, accessible components
+- **Tailwind CSS**: Utility-first styling
+- **Framer Motion**: Smooth animations and transitions
+- **Responsive Design**: Mobile-first approach
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Quick Start
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
+- Node.js 18+
+- Supabase account
+- Vercel account (for deployment)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Configure Supabase
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run the migration in SQL Editor:
+   ```sql
+   -- Copy and execute: supabase/migrations/20250104_multi_tenant_setup.sql
+   ```
+3. Get your API credentials from Settings → API
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Environment Variables
+Create `.env`:
+```bash
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SITE_URL=http://localhost:5173
 ```
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+
+Visit `http://localhost:5173`
+
+## 📚 Documentation
+
+For full documentation, see [CLAUDE.md](./CLAUDE.md)
+
+## 🏗️ Tech Stack
+
+**Frontend:** React 19, Vite 7, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion
+**Backend:** Supabase (PostgreSQL, Auth, RLS), Express (optional)
+**Deployment:** Vercel
+
+## 🔒 Security
+
+- Row-Level Security on all tables
+- JWT-based authentication
+- Secure password reset flow
+- Environment variable protection
+
+## 📖 Key Pages
+
+- `/` - Landing page
+- `/dashboard` - User dashboard
+- `/projects` - Project management
+- `/team` - Team member management
+- `/settings` - Organization settings
+- `/profile` - User profile
+- `/onboarding` - First-time user setup
+
+## 🛠️ Development
+
+```bash
+# Frontend only
+npm run dev
+
+# Backend (optional)
+npm run server
+
+# Both
+npm run dev:all
+
+# Type checking
+npm run type-check
+
+# Build
+npm run build
+```
+
+## 📝 License
+
+MIT License - See [LICENSE](./LICENSE)
+
+---
+
+Built with ❤️ using React, Vite, Supabase, and shadcn/ui
