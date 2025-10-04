@@ -3,15 +3,28 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
 
+// Validate URL scheme
+if (!supabaseUrl) {
+  console.error('VITE_SUPABASE_URL is not defined')
+}
+if (supabaseUrl && !supabaseUrl.startsWith('https://') && !supabaseUrl.startsWith('http://')) {
+  console.error('Invalid Supabase URL scheme. URL must start with https:// or http://', supabaseUrl)
+}
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 })
+
+// Expose for debugging in browser console
+if (typeof window !== 'undefined') {
+  ;(window as any).supabase = supabase
+}
 
 // Database types
 export type OrganizationRole = 'owner' | 'admin' | 'member'
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked'
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       organizations: {
@@ -45,6 +58,7 @@ export type Database = {
           updated_at?: string
           created_by?: string | null
         }
+        Relationships: []
       }
       organization_members: {
         Row: {
@@ -71,6 +85,15 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       invitations: {
         Row: {
@@ -112,6 +135,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -141,6 +165,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       projects: {
         Row: {
@@ -170,7 +195,11 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
     }
     Functions: {
       get_user_organizations: {
@@ -191,6 +220,13 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: { success: boolean; error?: string; organization_id?: string }
       }
+    }
+    Enums: {
+      organization_role: 'owner' | 'admin' | 'member'
+      invitation_status: 'pending' | 'accepted' | 'expired' | 'revoked'
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

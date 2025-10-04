@@ -29,6 +29,8 @@ export default function Onboarding() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      console.log('Updating profile for user:', user.id)
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -37,10 +39,15 @@ export default function Onboarding() {
         })
         .eq('id', user.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Profile update error:', error)
+        throw error
+      }
 
+      console.log('Profile updated successfully')
       setStep('organization')
     } catch (error: any) {
+      console.error('handleProfileSubmit error:', error)
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -56,8 +63,12 @@ export default function Onboarding() {
     setLoading(true)
 
     try {
+      console.log('=== STARTING ORGANIZATION CREATE ===')
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+
+      console.log('User ID:', user.id)
+      console.log('User Email:', user.email)
 
       // Create organization slug
       const slug = orgName
@@ -66,6 +77,8 @@ export default function Onboarding() {
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '')
+
+      console.log('Creating org with:', { name: orgName.trim(), slug, created_by: user.id })
 
       const { data: org, error: orgError } = await supabase
         .from('organizations')
@@ -77,9 +90,19 @@ export default function Onboarding() {
         .select()
         .single()
 
-      if (orgError) throw orgError
+      if (orgError) {
+        console.error('Organization insert error:', orgError)
+        console.error('Error code:', orgError.code)
+        console.error('Error message:', orgError.message)
+        console.error('Error details:', orgError.details)
+        console.error('Error hint:', orgError.hint)
+        throw orgError
+      }
+
+      console.log('Organization created:', org)
 
       // Add user as owner
+      console.log('Adding user as owner...')
       const { error: memberError } = await supabase
         .from('organization_members')
         .insert({
@@ -88,7 +111,12 @@ export default function Onboarding() {
           role: 'owner'
         })
 
-      if (memberError) throw memberError
+      if (memberError) {
+        console.error('Member insert error:', memberError)
+        throw memberError
+      }
+
+      console.log('User added as owner successfully')
 
       await refreshOrganizations()
 
@@ -99,10 +127,11 @@ export default function Onboarding() {
 
       navigate('/dashboard')
     } catch (error: any) {
+      console.error('=== ORGANIZATION CREATE FAILED ===', error)
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message
+        description: error.message || JSON.stringify(error)
       })
     } finally {
       setLoading(false)

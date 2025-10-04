@@ -69,6 +69,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     return () => {
       authListener.subscription.unsubscribe()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
