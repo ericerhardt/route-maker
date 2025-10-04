@@ -74,7 +74,7 @@ export default function Projects() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Project name is required'
+        description: 'Route project name is required'
       })
       return
     }
@@ -107,7 +107,7 @@ export default function Projects() {
       setProjects([data, ...projects])
       toast({
         title: 'Success',
-        description: 'Project created'
+        description: 'Route project created'
       })
       setNewProjectName('')
       setNewProjectDescription('')
@@ -142,7 +142,7 @@ export default function Projects() {
       )
       toast({
         title: 'Success',
-        description: 'Project updated'
+        description: 'Route project updated'
       })
       setEditOpen(false)
       setEditingProject(null)
@@ -152,7 +152,7 @@ export default function Projects() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return
+    if (!confirm('Are you sure you want to delete this route project?')) return
 
     const { error } = await supabase.from('projects').delete().eq('id', id)
 
@@ -166,7 +166,7 @@ export default function Projects() {
       setProjects(projects.filter((p) => p.id !== id))
       toast({
         title: 'Success',
-        description: 'Project deleted'
+        description: 'Route project deleted'
       })
     }
   }
@@ -202,20 +202,20 @@ export default function Projects() {
         <main className="container mx-auto px-4 py-12">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold">Projects</h1>
-              <p className="text-muted-foreground">Manage projects for {currentOrganization.name}</p>
+              <h1 className="text-4xl font-bold">Route Projects</h1>
+              <p className="text-muted-foreground">Manage route projects for {currentOrganization.name}</p>
             </div>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  New Project
+                  New Route Project
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create Project</DialogTitle>
-                  <DialogDescription>Add a new project to your organization</DialogDescription>
+                  <DialogTitle>Create Route Project</DialogTitle>
+                  <DialogDescription>Add a new route project to your organization</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -246,8 +246,8 @@ export default function Projects() {
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Edit Project</DialogTitle>
-                  <DialogDescription>Update your project details</DialogDescription>
+                  <DialogTitle>Edit Route Project</DialogTitle>
+                  <DialogDescription>Update your route project details</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -295,14 +295,14 @@ export default function Projects() {
                     <Folder className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium">No projects yet</p>
+                    <p className="font-medium">No route projects yet</p>
                     <p className="text-sm text-muted-foreground">
-                      Create your first project to get started
+                      Create your first route project to get started
                     </p>
                   </div>
                   <Button onClick={() => setCreateOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Project
+                    Create Route Project
                   </Button>
                 </div>
               </CardContent>

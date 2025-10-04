@@ -85,7 +85,7 @@ export default function NavBar() {
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/projects">Projects</Link>
+                <Link to="/projects">Route Projects</Link>
               </Button>
               <Button variant="ghost" asChild>
                 <Link to="/team">

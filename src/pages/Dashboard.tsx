@@ -94,8 +94,8 @@ export default function Dashboard() {
                         <Folder className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle>Projects</CardTitle>
-                        <CardDescription>Total projects in organization</CardDescription>
+                        <CardTitle>Route Projects</CardTitle>
+                        <CardDescription>Total route projects in organization</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -103,7 +103,7 @@ export default function Dashboard() {
                     <p className="text-2xl font-bold">{projectCount}</p>
                     <Button variant="link" asChild className="h-auto p-0 text-sm">
                       <Link to="/projects">
-                        View all projects →
+                        View all route projects →
                       </Link>
                     </Button>
                   </CardContent>
