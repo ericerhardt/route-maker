@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import type { Database } from '@/lib/supabaseClient'
 
@@ -33,7 +33,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase.rpc('get_user_organizations', {
         user_uuid: session.user.id
-      })
+      }) as { data: Organization[] | null; error: any }
 
       if (error) throw error
 
@@ -43,7 +43,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       if (!currentOrganization && data && data.length > 0) {
         const savedOrgId = localStorage.getItem('currentOrganizationId')
         const org = savedOrgId
-          ? data.find((o: Organization) => o.id === savedOrgId) || data[0]
+          ? data.find((o) => o.id === savedOrgId) || data[0]
           : data[0]
         setCurrentOrganization(org)
       }

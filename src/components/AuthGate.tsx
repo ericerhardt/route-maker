@@ -58,7 +58,7 @@ export default function AuthGate({ children }: AuthGateProps) {
       // Check if user has/belongs to an organization
       const { data: orgs } = await supabase.rpc('get_user_organizations', {
         user_uuid: userId
-      })
+      }) as { data: any[] | null; error: any }
 
       if (!profile?.first_name || !orgs || orgs.length === 0) {
         navigate('/onboarding')

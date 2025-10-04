@@ -40,6 +40,8 @@ export default function AcceptInvite() {
   }, [token])
 
   const fetchInvitation = async () => {
+    if (!token) return
+
     try {
       const { data, error } = await supabase
         .from('invitations')
@@ -60,21 +62,21 @@ export default function AcceptInvite() {
         return
       }
 
-      if (data.status !== 'pending') {
+      if ((data as any).status !== 'pending') {
         setError('This invitation is no longer valid')
         return
       }
 
-      if (new Date(data.expires_at) < new Date()) {
+      if (new Date((data as any).expires_at) < new Date()) {
         setError('This invitation has expired')
         await supabase
           .from('invitations')
           .update({ status: 'expired' })
-          .eq('id', data.id)
+          .eq('id', (data as any).id)
         return
       }
 
-      setInvitation(data as InvitationData)
+      setInvitation(data as any as InvitationData)
     } catch (error: any) {
       setError(error.message)
     } finally {
@@ -110,12 +112,12 @@ export default function AcceptInvite() {
 
       const { data, error } = await supabase.rpc('accept_invitation', {
         invitation_token: token!
-      })
+      }) as { data: { success: boolean; error?: string; organization_id?: string } | null; error: any }
 
       if (error) throw error
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to accept invitation')
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to accept invitation')
       }
 
       setAccepted(true)
