@@ -17,7 +17,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
+import { AddressAutocomplete } from './AddressAutocomplete'
 import { locationFormSchema, type LocationFormData, type Location } from '../schema'
 
 interface LocationFormProps {
@@ -114,7 +116,7 @@ export function LocationForm({
           )}
         />
 
-        {/* Address Line 1 */}
+        {/* Address Line 1 with Autocomplete */}
         <FormField
           control={form.control}
           name="address_line1"
@@ -122,8 +124,20 @@ export function LocationForm({
             <FormItem>
               <FormLabel>Address Line 1 *</FormLabel>
               <FormControl>
-                <Input placeholder="123 Safari Ln" {...field} />
+                <AddressAutocomplete
+                  value={field.value}
+                  onChange={field.onChange}
+                  onSelect={(address) => {
+                    // Parse the selected address and try to fill in other fields
+                    field.onChange(address.formattedAddress)
+                    // You could parse the address here and auto-fill city, state, etc.
+                  }}
+                  placeholder="Start typing address..."
+                />
               </FormControl>
+              <FormDescription>
+                Start typing to search for addresses
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

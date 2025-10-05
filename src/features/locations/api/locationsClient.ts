@@ -71,17 +71,28 @@ export const locationsApi = {
     if (error) throw new Error(error.message)
   },
 
-  // Note: Geocoding will need to be handled differently without backend
-  // For now, these return mock success - you'll need to implement geocoding differently
   async geocode(id: string): Promise<Location> {
-    // Without a backend, we can't call geocoding APIs
-    // You would need to use a client-side geocoding service or Edge Function
-    throw new Error('Geocoding requires backend implementation')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase.functions.invoke('geocode', {
+      body: { locationId: id },
+    })
+
+    if (error) throw new Error(error.message)
+    return data
   },
 
   async geocodeBulk(ids: string[]): Promise<GeocodeResult> {
-    // Without a backend, we can't call geocoding APIs
-    throw new Error('Bulk geocoding requires backend implementation')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase.functions.invoke('geocode', {
+      body: { locationIds: ids },
+    })
+
+    if (error) throw new Error(error.message)
+    return data
   },
 
   async import(organizationId: string, locations: CsvLocation[]): Promise<ImportResult> {
