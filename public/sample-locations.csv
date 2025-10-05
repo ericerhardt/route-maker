@@ -1,0 +1,6 @@
+name,type,address_line1,address_line2,city,state,postal_code,country,notes
+Safari Home,residential,123 Safari Ln,,Dallas,TX,75201,US,Test residential location
+Pool Supply HQ,commercial,45 Water Way,,Fort Worth,TX,76107,US,Main commercial location
+Downtown Office,commercial,100 Main St,Suite 200,Dallas,TX,75202,US,Corporate office
+Sunset Residence,residential,456 Sunset Blvd,,Arlington,TX,76010,US,Beautiful sunset views
+Tech Campus,commercial,789 Innovation Dr,,Plano,TX,75024,US,Technology center

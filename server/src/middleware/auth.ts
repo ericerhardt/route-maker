@@ -1,8 +1,20 @@
 import { Request, Response, NextFunction } from 'express'
 import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Load environment variables
+dotenv.config()
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl) {
+  throw new Error('Missing SUPABASE_URL or VITE_SUPABASE_URL environment variable')
+}
+
+if (!supabaseServiceKey) {
+  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable')
+}
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 

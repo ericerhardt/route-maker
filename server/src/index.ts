@@ -5,6 +5,7 @@ import organizationRoutes from './routes/organizations'
 import invitationRoutes from './routes/invitations'
 import profileRoutes from './routes/profiles'
 import projectRoutes from './routes/projects'
+import locationRoutes from './routes/locations'
 import { errorHandler } from './middleware/errorHandler'
 
 dotenv.config()
@@ -29,6 +30,7 @@ app.use('/api/organizations', organizationRoutes)
 app.use('/api/invitations', invitationRoutes)
 app.use('/api/profiles', profileRoutes)
 app.use('/api/projects', projectRoutes)
+app.use('/api/locations', locationRoutes)
 
 // Error handling
 app.use(errorHandler)

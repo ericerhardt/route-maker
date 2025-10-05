@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { User, LogOut, Building2, Users, Settings, UserCircle } from 'lucide-react'
+import { User, LogOut, Building2, Users, Settings, UserCircle, MapPin } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 export default function NavBar() {
@@ -86,6 +86,12 @@ export default function NavBar() {
               </Button>
               <Button variant="ghost" asChild>
                 <Link to="/projects">Route Projects</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/locations">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Locations
+                </Link>
               </Button>
               <Button variant="ghost" asChild>
                 <Link to="/team">
