@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseClient'
 import { useOrganization } from '@/contexts/OrganizationContext'
 import type { Database } from '@/lib/supabaseClient'
@@ -31,11 +32,10 @@ import { Plus, MoreVertical, Pencil, Trash2, Folder } from 'lucide-react'
 type Project = Database['public']['Tables']['projects']['Row']
 
 export default function Projects() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDescription, setNewProjectDescription] = useState('')
   const { toast } = useToast()
@@ -115,42 +115,6 @@ export default function Projects() {
     }
   }
 
-  const handleUpdate = async () => {
-    if (!editingProject) return
-
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        name: newProjectName,
-        description: newProjectDescription
-      })
-      .eq('id', editingProject.id)
-
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message
-      })
-    } else {
-      setProjects(
-        projects.map((p) =>
-          p.id === editingProject.id
-            ? { ...p, name: newProjectName, description: newProjectDescription }
-            : p
-        )
-      )
-      toast({
-        title: 'Success',
-        description: 'Route project updated'
-      })
-      setEditOpen(false)
-      setEditingProject(null)
-      setNewProjectName('')
-      setNewProjectDescription('')
-    }
-  }
-
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this route project?')) return
 
@@ -171,11 +135,8 @@ export default function Projects() {
     }
   }
 
-  const openEdit = (project: Project) => {
-    setEditingProject(project)
-    setNewProjectName(project.name)
-    setNewProjectDescription(project.description || '')
-    setEditOpen(true)
+  const openEdit = (projectId: string) => {
+    navigate(`/projects/${projectId}/edit`)
   }
 
   if (!currentOrganization) {
@@ -242,38 +203,6 @@ export default function Projects() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
-            <Dialog open={editOpen} onOpenChange={setEditOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit Route Project</DialogTitle>
-                  <DialogDescription>Update your route project details</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">Name</Label>
-                    <Input
-                      id="edit-name"
-                      placeholder="My Awesome Project"
-                      value={newProjectName}
-                      onChange={(e) => setNewProjectName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-description">Description (optional)</Label>
-                    <Input
-                      id="edit-description"
-                      placeholder="A brief description"
-                      value={newProjectDescription}
-                      onChange={(e) => setNewProjectDescription(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleUpdate}>Save Changes</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
 
           {loading ? (
@@ -335,7 +264,7 @@ export default function Projects() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(project)}>
+                          <DropdownMenuItem onClick={() => openEdit(project.id)}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>

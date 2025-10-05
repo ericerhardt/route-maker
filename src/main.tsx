@@ -5,6 +5,7 @@ import './index.css'
 import Home from '@/pages/Home'
 import Dashboard from '@/pages/Dashboard'
 import Projects from '@/pages/Projects'
+import ProjectEdit from '@/pages/ProjectEdit'
 import Profile from '@/pages/Profile'
 import Settings from '@/pages/Settings'
 import TeamMembers from '@/pages/TeamMembers'
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/dashboard', element: <Dashboard /> },
   { path: '/projects', element: <Projects /> },
+  { path: '/projects/:id/edit', element: <ProjectEdit /> },
   { path: '/profile', element: <Profile /> },
   { path: '/settings', element: <Settings /> },
   { path: '/team', element: <TeamMembers /> },
