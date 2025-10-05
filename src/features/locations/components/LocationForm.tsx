@@ -181,11 +181,13 @@ export function LocationForm({
                   value={field.value}
                   onChange={field.onChange}
                   onSelect={(address) => {
+                    console.log('LocationForm received address:', address)
                     // Set just the street address
                     field.onChange(address.formattedAddress)
 
                     // Auto-fill city, state, and postal code if available
                     if (address.components) {
+                      console.log('Auto-filling components:', address.components)
                       if (address.components.city) {
                         form.setValue('city', address.components.city)
                       }
@@ -198,6 +200,8 @@ export function LocationForm({
                       if (address.components.country) {
                         form.setValue('country', address.components.country)
                       }
+                    } else {
+                      console.log('No components found in address object')
                     }
                   }}
                   placeholder="Start typing address..."

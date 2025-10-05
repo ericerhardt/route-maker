@@ -81,6 +81,7 @@ export function AddressAutocomplete({
       const result = await response.json()
 
       if (result.results) {
+        console.log('Autocomplete results:', result.results)
         setSuggestions(result.results)
         setShowSuggestions(true)
       }
@@ -105,11 +106,48 @@ export function AddressAutocomplete({
     }, 300)
   }
 
-  const handleSelect = (suggestion: AddressResult) => {
-    onChange(suggestion.formattedAddress)
+  const handleSelect = async (suggestion: AddressResult) => {
+    console.log('Selected address:', suggestion)
     setShowSuggestions(false)
     setSuggestions([])
-    onSelect?.(suggestion)
+
+    // If Google place with placeId, fetch details to get components
+    if (suggestion.placeId) {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const response = await fetch(
+          `${supabaseUrl}/functions/v1/geocode-place-details?place_id=${encodeURIComponent(suggestion.placeId)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+          }
+        )
+        const data = await response.json()
+
+        if (data.components) {
+          // Update the suggestion with components
+          const enhancedSuggestion = {
+            ...suggestion,
+            formattedAddress: data.components.street || suggestion.description,
+            components: data.components,
+          }
+          onChange(enhancedSuggestion.formattedAddress)
+          onSelect?.(enhancedSuggestion)
+        } else {
+          onChange(suggestion.formattedAddress)
+          onSelect?.(suggestion)
+        }
+      } catch (error) {
+        console.error('Error fetching place details:', error)
+        onChange(suggestion.formattedAddress)
+        onSelect?.(suggestion)
+      }
+    } else {
+      // OpenCage results already have components
+      onChange(suggestion.formattedAddress)
+      onSelect?.(suggestion)
+    }
   }
 
   return (

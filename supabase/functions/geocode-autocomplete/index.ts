@@ -30,6 +30,42 @@ function parseOpenCageComponents(components: any): AddressComponents {
   }
 }
 
+function parseGoogleComponents(addressComponents: any[]): AddressComponents {
+  const result: AddressComponents = {
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'US',
+  }
+
+  let streetNumber = ''
+  let route = ''
+
+  for (const component of addressComponents) {
+    const types = component.types || []
+
+    if (types.includes('street_number')) {
+      streetNumber = component.short_name
+    } else if (types.includes('route')) {
+      route = component.short_name
+    } else if (types.includes('locality')) {
+      result.city = component.long_name
+    } else if (types.includes('administrative_area_level_1')) {
+      result.state = component.short_name
+    } else if (types.includes('postal_code')) {
+      result.postalCode = component.short_name
+    } else if (types.includes('country')) {
+      result.country = component.short_name
+    }
+  }
+
+  // Build street address from street number + route
+  result.street = [streetNumber, route].filter(Boolean).join(' ')
+
+  return result
+}
+
 async function searchAddresses(query: string): Promise<AutocompleteResult[]> {
   const provider = Deno.env.get('GEOCODING_PROVIDER') || 'opencage'
   const apiKey = Deno.env.get('GEOCODING_API_KEY')
