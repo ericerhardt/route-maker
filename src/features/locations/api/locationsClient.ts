@@ -1,8 +1,6 @@
 import { supabase } from '@/lib/supabaseClient'
 import type { Location, LocationFormData, CsvLocation } from '../schema'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
 export interface GeocodeResult {
   success: number
   failed: number
@@ -15,81 +13,108 @@ export interface ImportResult {
   errors: Array<{ row: number; error: string; data?: Partial<CsvLocation> }>
 }
 
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  // Get the current session token
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (!session) {
-    throw new Error('Not authenticated')
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      ...options.headers,
-    },
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }))
-    throw new Error(error.error || `HTTP ${response.status}`)
-  }
-
-  if (response.status === 204) {
-    return null
-  }
-
-  return response.json()
-}
-
 export const locationsApi = {
   async list(organizationId: string): Promise<Location[]> {
-    return fetchWithAuth(`${API_BASE}/api/locations/organization/${organizationId}`)
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw new Error(error.message)
+    return data || []
   },
 
   async get(id: string): Promise<Location> {
-    return fetchWithAuth(`${API_BASE}/api/locations/${id}`)
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data
   },
 
-  async create(organizationId: string, data: LocationFormData): Promise<Location> {
-    return fetchWithAuth(`${API_BASE}/api/locations`, {
-      method: 'POST',
-      body: JSON.stringify({ ...data, organization_id: organizationId }),
-    })
+  async create(organizationId: string, formData: LocationFormData): Promise<Location> {
+    const { data, error } = await supabase
+      .from('locations')
+      .insert([{
+        ...formData,
+        organization_id: organizationId,
+      }])
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data
   },
 
-  async update(id: string, data: Partial<LocationFormData>): Promise<Location> {
-    return fetchWithAuth(`${API_BASE}/api/locations/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
+  async update(id: string, formData: Partial<LocationFormData>): Promise<Location> {
+    const { data, error } = await supabase
+      .from('locations')
+      .update(formData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data
   },
 
   async delete(id: string): Promise<void> {
-    return fetchWithAuth(`${API_BASE}/api/locations/${id}`, {
-      method: 'DELETE',
-    })
+    const { error } = await supabase
+      .from('locations')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
   },
 
+  // Note: Geocoding will need to be handled differently without backend
+  // For now, these return mock success - you'll need to implement geocoding differently
   async geocode(id: string): Promise<Location> {
-    return fetchWithAuth(`${API_BASE}/api/locations/${id}/geocode`, {
-      method: 'POST',
-    })
+    // Without a backend, we can't call geocoding APIs
+    // You would need to use a client-side geocoding service or Edge Function
+    throw new Error('Geocoding requires backend implementation')
   },
 
   async geocodeBulk(ids: string[]): Promise<GeocodeResult> {
-    return fetchWithAuth(`${API_BASE}/api/locations/geocode-bulk`, {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    })
+    // Without a backend, we can't call geocoding APIs
+    throw new Error('Bulk geocoding requires backend implementation')
   },
 
   async import(organizationId: string, locations: CsvLocation[]): Promise<ImportResult> {
-    return fetchWithAuth(`${API_BASE}/api/locations/import`, {
-      method: 'POST',
-      body: JSON.stringify({ organizationId, locations }),
-    })
+    const results: ImportResult = {
+      success: 0,
+      failed: 0,
+      errors: [],
+    }
+
+    for (let i = 0; i < locations.length; i++) {
+      const location = locations[i]
+
+      try {
+        const { error } = await supabase
+          .from('locations')
+          .insert([{
+            ...location,
+            organization_id: organizationId,
+            is_active: true,
+          }])
+
+        if (error) throw error
+        results.success++
+      } catch (error) {
+        results.failed++
+        results.errors.push({
+          row: i + 1,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          data: location,
+        })
+      }
+    }
+
+    return results
   },
 }
