@@ -5,10 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface AddressComponents {
+  street?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+}
+
 interface AutocompleteResult {
   description: string
   placeId?: string
   formattedAddress: string
+  components?: AddressComponents
+}
+
+function parseOpenCageComponents(components: any): AddressComponents {
+  return {
+    street: components.road || components.street || '',
+    city: components.city || components.town || components.village || '',
+    state: components.state_code || components.state || '',
+    postalCode: components.postcode || '',
+    country: components.country_code?.toUpperCase() || components.country || 'US',
+  }
 }
 
 async function searchAddresses(query: string): Promise<AutocompleteResult[]> {
@@ -26,7 +45,6 @@ async function searchAddresses(query: string): Promise<AutocompleteResult[]> {
       q: query,
       key: apiKey,
       limit: '5',
-      no_annotations: '1',
     })
 
     const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?${params}`)
@@ -34,9 +52,17 @@ async function searchAddresses(query: string): Promise<AutocompleteResult[]> {
 
     if (data.results) {
       for (const result of data.results) {
+        const components = parseOpenCageComponents(result.components)
+
+        // Build clean street address (just street number + name)
+        const houseNumber = result.components.house_number || ''
+        const road = result.components.road || result.components.street || ''
+        const street = [houseNumber, road].filter(Boolean).join(' ')
+
         results.push({
           description: result.formatted,
-          formattedAddress: result.formatted,
+          formattedAddress: street || result.formatted,
+          components,
         })
       }
     }

@@ -3,9 +3,18 @@ import { supabase } from '@/lib/supabaseClient'
 import { Input } from '@/components/ui/input'
 import { MapPin, Loader2 } from 'lucide-react'
 
+interface AddressComponents {
+  street?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+}
+
 interface AddressResult {
   description: string
   formattedAddress: string
+  components?: AddressComponents
 }
 
 interface AddressAutocompleteProps {
