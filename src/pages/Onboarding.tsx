@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabaseClient'
 import { useOrganization } from '@/contexts/OrganizationContext'
@@ -12,14 +12,39 @@ import AuthGate from '@/components/AuthGate'
 import { Building2, User } from 'lucide-react'
 
 export default function Onboarding() {
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite')
+
   const [step, setStep] = useState<'profile' | 'organization'>('profile')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [orgName, setOrgName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [hasInvitation, setHasInvitation] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
   const { refreshOrganizations } = useOrganization()
+
+  useEffect(() => {
+    if (inviteToken) {
+      setHasInvitation(true)
+    }
+
+    // Pre-fill first and last name from user metadata if available
+    const loadUserMetadata = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.user_metadata) {
+        if (user.user_metadata.first_name) {
+          setFirstName(user.user_metadata.first_name)
+        }
+        if (user.user_metadata.last_name) {
+          setLastName(user.user_metadata.last_name)
+        }
+      }
+    }
+
+    loadUserMetadata()
+  }, [inviteToken])
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +70,13 @@ export default function Onboarding() {
       }
 
       console.log('Profile updated successfully')
-      setStep('organization')
+
+      // If user has an invitation, accept it instead of creating org
+      if (hasInvitation && inviteToken) {
+        await acceptInvitation(inviteToken)
+      } else {
+        setStep('organization')
+      }
     } catch (error: any) {
       console.error('handleProfileSubmit error:', error)
       toast({
@@ -55,6 +86,29 @@ export default function Onboarding() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const acceptInvitation = async (token: string) => {
+    try {
+      const { data, error } = await supabase.rpc('accept_invitation', {
+        invitation_token: token
+      }) as { data: { success: boolean; error?: string } | null; error: any }
+
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error || 'Failed to accept invitation')
+
+      await refreshOrganizations()
+
+      toast({
+        title: 'Success!',
+        description: 'You\'ve joined the organization'
+      })
+
+      navigate('/dashboard')
+    } catch (error: any) {
+      console.error('Accept invitation error:', error)
+      throw error
     }
   }
 
@@ -166,14 +220,18 @@ export default function Onboarding() {
                 </CardTitle>
                 <CardDescription>
                   {step === 'profile'
-                    ? "Let's start by setting up your profile"
+                    ? hasInvitation
+                      ? "Complete your profile to join the organization"
+                      : "Let's start by setting up your profile"
                     : 'Set up your organization to collaborate with your team'}
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
-                <div className={`h-1 flex-1 rounded ${step === 'profile' ? 'bg-primary' : 'bg-muted'}`} />
-                <div className={`h-1 flex-1 rounded ${step === 'organization' ? 'bg-primary' : 'bg-muted'}`} />
-              </div>
+              {!hasInvitation && (
+                <div className="flex gap-2">
+                  <div className={`h-1 flex-1 rounded ${step === 'profile' ? 'bg-primary' : 'bg-muted'}`} />
+                  <div className={`h-1 flex-1 rounded ${step === 'organization' ? 'bg-primary' : 'bg-muted'}`} />
+                </div>
+              )}
             </CardHeader>
 
             <CardContent>

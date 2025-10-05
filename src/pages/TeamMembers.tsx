@@ -35,7 +35,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { UserPlus, MoreVertical, Trash2, Shield, Mail, Copy, Check } from 'lucide-react'
+import { UserPlus, MoreVertical, Trash2, Shield, Mail, Copy, Check, RefreshCw } from 'lucide-react'
 import type { OrganizationRole } from '@/lib/supabaseClient'
 
 interface Member {
@@ -70,6 +70,7 @@ export default function TeamMembers() {
   const [inviteRole, setInviteRole] = useState<OrganizationRole>('member')
   const [inviting, setInviting] = useState(false)
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
+  const [resendingInvite, setResendingInvite] = useState<string | null>(null)
   const { currentOrganization } = useOrganization()
   const { toast } = useToast()
   const [currentUserRole, setCurrentUserRole] = useState<OrganizationRole | null>(null)
@@ -103,19 +104,24 @@ export default function TeamMembers() {
 
       if (error) throw error
 
-      // Get user emails
-      const { data: { users } } = await supabase.auth.admin.listUsers()
+      // Get user emails - we'll use a database function to get emails
+      const { data: membersData, error: emailError } = await supabase
+        .rpc('get_organization_members_with_emails', {
+          org_id: currentOrganization.id
+        })
 
-      const membersWithEmail = (data || []).map(member => {
-        const user = users?.find(u => u.id === member.user_id)
-        return {
+      if (emailError) {
+        console.error('Error fetching member emails:', emailError)
+        // Fallback: just show members without emails
+        const membersWithoutEmail = (data || []).map(member => ({
           ...member,
-          email: user?.email || 'Unknown',
+          email: 'Unknown',
           profile: member.profiles
-        }
-      })
-
-      setMembers(membersWithEmail)
+        }))
+        setMembers(membersWithoutEmail)
+      } else {
+        setMembers(membersData || [])
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -152,6 +158,24 @@ export default function TeamMembers() {
     setInviting(true)
 
     try {
+      // Check if there's already a pending invitation for this email
+      const { data: existingInvite } = await supabase
+        .from('invitations')
+        .select('id, status')
+        .eq('organization_id', currentOrganization.id)
+        .eq('email', inviteEmail.toLowerCase())
+        .eq('status', 'pending')
+        .maybeSingle()
+
+      if (existingInvite) {
+        // Resend the existing invitation instead
+        await handleResendInvitation(existingInvite.id)
+        setInviteEmail('')
+        setInviteRole('member')
+        setInviteOpen(false)
+        return
+      }
+
       // Generate token
       const token = crypto.randomUUID()
       const expiresAt = new Date()
@@ -174,6 +198,37 @@ export default function TeamMembers() {
         .single()
 
       if (error) throw error
+
+      // Send the invitation email via edge function
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          console.log('Sending invite email for token:', data.token)
+          console.log('Invitation data:', data)
+
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invite-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({
+                type: 'INSERT',
+                table: 'invitations',
+                record: data
+              })
+            }
+          )
+
+          const result = await response.json()
+          console.log('Email send response:', result)
+        }
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError)
+        // Don't fail the whole operation if email fails
+      }
 
       toast({
         title: 'Invitation sent',
@@ -278,6 +333,53 @@ export default function TeamMembers() {
       title: 'Copied!',
       description: 'Invitation link copied to clipboard'
     })
+  }
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setResendingInvite(invitationId)
+
+    try {
+      const invitation = invitations.find(inv => inv.id === invitationId)
+      if (!invitation) throw new Error('Invitation not found')
+
+      // Call the edge function directly to resend the email
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invite-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            type: 'INSERT',
+            table: 'invitations',
+            record: invitation
+          })
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(error)
+      }
+
+      toast({
+        title: 'Success',
+        description: `Invitation email resent to ${invitation.email}`
+      })
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      })
+    } finally {
+      setResendingInvite(null)
+    }
   }
 
   const isAdmin = currentUserRole === 'owner' || currentUserRole === 'admin'
@@ -495,7 +597,17 @@ export default function TeamMembers() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => handleResendInvitation(invitation.id)}
+                              disabled={resendingInvite === invitation.id}
+                              title="Resend invitation email"
+                            >
+                              <RefreshCw className={`h-4 w-4 ${resendingInvite === invitation.id ? 'animate-spin' : ''}`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => copyInviteLink(invitation.token)}
+                              title="Copy invitation link"
                             >
                               {copiedToken === invitation.token ? (
                                 <Check className="h-4 w-4" />
@@ -507,6 +619,7 @@ export default function TeamMembers() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRevokeInvitation(invitation.id)}
+                              title="Revoke invitation"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

@@ -48,6 +48,14 @@ export default function AuthGate({ children }: AuthGateProps) {
 
   const checkOnboarding = async (userId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Check if user's email is confirmed
+      if (user && !user.email_confirmed_at) {
+        console.log('Email not confirmed yet')
+        return
+      }
+
       // Check if user has completed profile
       const { data: profile } = await supabase
         .from('profiles')
@@ -60,8 +68,21 @@ export default function AuthGate({ children }: AuthGateProps) {
         user_uuid: userId
       }) as { data: any[] | null; error: any }
 
+      // Check for pending invitations for this user's email
+      const { data: pendingInvites } = await supabase
+        .from('invitations')
+        .select('id, token, organization_id')
+        .eq('email', user?.email)
+        .eq('status', 'pending')
+        .limit(1)
+
       if (!profile?.first_name || !orgs || orgs.length === 0) {
-        navigate('/onboarding')
+        // If user has pending invite, include token in navigation
+        if (pendingInvites && pendingInvites.length > 0) {
+          navigate(`/onboarding?invite=${pendingInvites[0].token}`)
+        } else {
+          navigate('/onboarding')
+        }
       }
     } catch (error) {
       console.error('Error checking onboarding:', error)
@@ -84,7 +105,7 @@ export default function AuthGate({ children }: AuthGateProps) {
         if (error) throw error
         toast({
           title: 'Check your email',
-          description: 'We sent you a confirmation link.'
+          description: 'We sent you a confirmation link. Please verify your email to continue.'
         })
       } else {
         const { error } = await supabase.auth.signInWithPassword({
