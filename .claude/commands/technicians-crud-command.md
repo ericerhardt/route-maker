@@ -1,4 +1,6 @@
 ---
+description: build-technicians
+---
 name: build_technicians_crud
 aliases:
   - technicians_crud

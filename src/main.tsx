@@ -13,6 +13,7 @@ import Onboarding from '@/pages/Onboarding'
 import AcceptInvite from '@/pages/AcceptInvite'
 import ResetPassword from '@/pages/ResetPassword'
 import LocationsPage from '@/features/locations/pages/LocationsPage'
+import TechniciansPage from '@/features/technicians/pages/TechniciansPage'
 import { OrganizationProvider } from '@/contexts/OrganizationContext'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
   { path: '/projects', element: <Projects /> },
   { path: '/projects/:id/edit', element: <ProjectEdit /> },
   { path: '/locations', element: <LocationsPage /> },
+  { path: '/technicians', element: <TechniciansPage /> },
   { path: '/profile', element: <Profile /> },
   { path: '/settings', element: <Settings /> },
   { path: '/team', element: <TeamMembers /> },

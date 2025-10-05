@@ -1,6 +1,16 @@
 -- Add organization_id to locations table for multi-tenant support
-ALTER TABLE public.locations
-ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'locations'
+    AND column_name = 'organization_id'
+  ) THEN
+    ALTER TABLE public.locations
+    ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Create index for performance
 CREATE INDEX IF NOT EXISTS locations_organization_id_idx ON public.locations(organization_id);
